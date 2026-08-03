@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Launch the Godot version a project actually asks for.
+#
+#   gd                  # inside a project -> open it; elsewhere -> project manager
+#   gd --version-list   # show installed engines
+#   gd -- <args>        # pass anything through to the engine
+#
+# Walks up from $PWD looking for .godot-version (or project.godot), so the
+# per-project pin is enforced rather than merely documented.
+set -euo pipefail
+
+TOOLKIT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+GAMES_ROOT="${GAMES_ROOT:-$(dirname "$TOOLKIT_DIR")}"
+source "$TOOLKIT_DIR/manifest/engine.conf" 2>/dev/null || true
+[[ -f "$TOOLKIT_DIR/machine.local.sh" ]] && source "$TOOLKIT_DIR/machine.local.sh"
+
+if [[ "${1:-}" == "--version-list" ]]; then
+  for d in "$GAMES_ROOT"/engine/*/; do
+    v="$(basename "$d")"
+    [[ "$v" == .* ]] && continue
+    [[ -L "${d%/}" ]] && continue        # skip the `current` symlink itself
+    [[ -x "$d/godot" ]] || continue
+    mark=" "; [[ "$(readlink "$GAMES_ROOT/engine/current" 2>/dev/null)" == "$v" ]] && mark="*"
+    printf ' %s %s\n' "$mark" "$v"
+  done
+  exit 0
+fi
+
+find_project_root() {
+  local d="$PWD"
+  while [[ "$d" != / ]]; do
+    [[ -f "$d/.godot-version" || -f "$d/project.godot" ]] && { printf '%s' "$d"; return 0; }
+    d="$(dirname "$d")"
+  done
+  return 1
+}
+
+version="${GODOT_DEFAULT:-current}"
+project=""
+
+if project="$(find_project_root)"; then
+  if [[ -f "$project/.godot-version" ]]; then
+    version="$(tr -d '[:space:]' < "$project/.godot-version")"
+  fi
+fi
+
+engine="$GAMES_ROOT/engine/$version/godot"
+if [[ ! -x "$engine" ]]; then
+  echo "gd: Godot $version is not installed." >&2
+  echo "    add it to manifest/engine.conf and run $TOOLKIT_DIR/bootstrap.sh" >&2
+  exit 1
+fi
+
+[[ "${1:-}" == "--" ]] && shift
+
+if [[ -n "$project" && -f "$project/project.godot" && $# -eq 0 ]]; then
+  exec "$engine" --editor --path "$project"
+fi
+exec "$engine" "$@"

@@ -1,0 +1,43 @@
+# Godot 4 import cache -- regenerable, and by far the largest thing in a
+# Godot project. Never commit it.
+.godot/
+.import/
+*.translation
+
+# Credentials. Godot 4 keeps these out of export_presets.cfg, which IS
+# committed because it is your build configuration.
+export_credentials.cfg
+export.cfg
+
+# Builds live in ~/games/exports/<name>, never in the repo.
+/exports/
+/builds/
+*.pck
+*.zip
+
+# Mono / C#
+.mono/
+data_*/
+mono_crash.*.json
+*.dll
+*.exe
+*.so
+.godot-mono/
+
+# Authoring files belong in ~/games/source/<name>, not here. Listed as a
+# backstop in case one is copied in by accident.
+*.blend
+*.blend[0-9]*
+*.psd
+*.aseprite
+*.ase
+*.kra
+*.xcf
+*.flp
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.tmp
+*~

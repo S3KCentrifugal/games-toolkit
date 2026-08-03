@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Scaffold a new game: skeleton project, git repo, matching source/ and
+# exports/ dirs, and a manifest entry so it restores on the next machine.
+#
+#   new-game vertigo [godot-version]
+set -euo pipefail
+
+TOOLKIT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+GAMES_ROOT="${GAMES_ROOT:-$(dirname "$TOOLKIT_DIR")}"
+source "$TOOLKIT_DIR/lib/util.sh"
+source "$TOOLKIT_DIR/manifest/engine.conf"
+[[ -f "$TOOLKIT_DIR/machine.local.sh" ]] && source "$TOOLKIT_DIR/machine.local.sh"
+
+NAME="${1:-}"
+VER="${2:-$GODOT_DEFAULT}"
+[[ -n "$NAME" ]] || { echo "usage: new-game <name> [godot-version]"; exit 2; }
+[[ "$NAME" =~ ^[a-z0-9][a-z0-9_-]*$ ]] || die "use lowercase, digits, - and _ only (Godot convention)"
+
+DIR="$GAMES_ROOT/projects/$NAME"
+[[ -e "$DIR" ]] && die "$DIR already exists"
+[[ -x "$GAMES_ROOT/engine/$VER/godot" ]] || die "Godot $VER is not installed -- run bootstrap.sh"
+
+log_do "scaffold $NAME (Godot $VER)"
+cp -r "$TOOLKIT_DIR/templates/skeleton" "$DIR"
+cp "$TOOLKIT_DIR/templates/gitignore"    "$DIR/.gitignore"
+cp "$TOOLKIT_DIR/templates/gitattributes" "$DIR/.gitattributes"
+
+sed -i "s/__PROJECT_NAME__/$NAME/g" "$DIR/project.godot"
+printf '%s\n' "$VER" > "$DIR/.godot-version"
+
+ensure_dir "$GAMES_ROOT/source/$NAME"
+ensure_dir "$GAMES_ROOT/exports/$NAME"
+
+git -C "$DIR" init --quiet --initial-branch=main
+git -C "$DIR" add -A
+if git -C "$DIR" commit --quiet -m "Scaffold $NAME (Godot $VER)" 2>/dev/null; then
+  log_ok "git repo initialised on main"
+else
+  log_warn "repo created but nothing committed -- set a git identity, then:"
+  log_note "  git -C $DIR commit -m 'Scaffold $NAME'"
+fi
+
+cat <<EOF
+
+  $DIR
+
+  next:
+    cd $DIR
+    git remote add origin git@github.com:<you>/$NAME.git && git push -u origin main
+    $TOOLKIT_DIR/snapshot.sh     # record it in the manifest
+    gd                           # open in Godot $VER
+
+  raw art/audio sources belong in  $GAMES_ROOT/source/$NAME
+  builds go to                     $GAMES_ROOT/exports/$NAME
+EOF

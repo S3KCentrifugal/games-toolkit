@@ -1,0 +1,33 @@
+# Normalise line endings for text, and keep git's hands off binaries --
+# EOL conversion silently corrupts them.
+* text=auto eol=lf
+
+*.gd    text
+*.cs    text
+*.tscn  text
+*.tres  text
+*.godot text
+*.cfg   text
+*.json  text
+*.md    text
+*.gdshader text
+
+*.png   binary
+*.jpg   binary
+*.webp  binary
+*.svg   text
+*.ogg   binary
+*.wav   binary
+*.mp3   binary
+*.glb   binary
+*.gltf  binary
+*.ttf   binary
+*.otf   binary
+*.res   binary
+*.pck   binary
+
+# Scene and resource files are line-based but merge badly. Flagging them keeps
+# git from producing plausible-looking but broken auto-merges.
+*.tscn  merge=binary
+*.tres  merge=binary
+*.escn  merge=binary

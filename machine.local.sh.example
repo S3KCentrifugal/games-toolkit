@@ -1,0 +1,16 @@
+# Copy to machine.local.sh (gitignored) for facts true of THIS box only.
+# Sourced last, so anything here overrides the manifests.
+
+# Put the tree on a different disk:
+# GAMES_ROOT="/mnt/nvme-scratch/games"
+
+# Run a beta on this machine without changing it everywhere:
+# GODOT_DEFAULT=4.8.0
+
+# Laptop that only edits, never exports -- saves ~1 GB per version:
+# INSTALL_EXPORT_TEMPLATES=0
+
+# Where sync.sh moves library/ and source/:
+# SYNC_REMOTE="/mnt/backup/games"
+# SYNC_REMOTE="rob@nas.local:/volume1/games"
+# SYNC_CMD=rclone   # then SYNC_REMOTE="gdrive:games"

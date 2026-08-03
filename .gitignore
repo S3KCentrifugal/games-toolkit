@@ -1,0 +1,6 @@
+# Per-machine overrides -- never shared.
+machine.local.sh
+
+# Nothing else in this repo should ever be large.
+*.zip
+*.tpz
