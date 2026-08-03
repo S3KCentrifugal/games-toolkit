@@ -22,6 +22,18 @@ ensure_project() {
     would "clone $name from $remote" && return 0
     log_do "clone $name"
     git clone --quiet "$remote" "$dir" || { log_err "clone failed: $remote"; return 0; }
+
+    # A clone can exit 0 and still check out nothing (e.g. remote HEAD points at
+    # a branch that does not exist). Catch it here rather than at `gd` time.
+    if [[ ! -f "$dir/project.godot" ]]; then
+      local branch
+      branch="$(git -C "$dir" branch -r --format='%(refname:lstrip=3)' | grep -Ex 'main|master' | head -1)"
+      if [[ -n "$branch" ]]; then
+        log_warn "$name: remote HEAD is unset, checking out $branch"
+        git -C "$dir" checkout --quiet "$branch"
+      fi
+      [[ -f "$dir/project.godot" ]] || log_warn "$name: no project.godot after clone -- check the remote"
+    fi
   fi
 
   # The version marker is what bin/gd reads to pick an engine.
